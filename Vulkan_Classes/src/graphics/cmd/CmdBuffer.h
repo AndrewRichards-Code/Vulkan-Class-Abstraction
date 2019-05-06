@@ -34,6 +34,12 @@ public:
 	void Begin(VkCommandBufferUsageFlagBits usage);
 	void End();
 
+	void SetClearValues(const VkClearColorValue& colour, const VkClearDepthStencilValue& depthStencil = { 1.0f, 0 })
+	{
+		m_ClearColours[0].color = colour;
+		m_ClearColours[1].depthStencil = depthStencil;
+	}
+
 	void BeginRenderPass(const Shader& shader, const Framebuffer& framebuffer);
 	void EndRenderPass();
 

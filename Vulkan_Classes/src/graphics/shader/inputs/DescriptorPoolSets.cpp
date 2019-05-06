@@ -65,7 +65,7 @@ void Sets::AddUniformBuffer(const UniformBuffer& ubo, int bindingIndex)
 		tempDescBufferInfo.buffer = ubo.GetUniformBuffer()[i];
 		tempDescBufferInfo.offset = 0;
 		tempDescBufferInfo.range = ubo.GetSize();
-		m_DescBufferInfos.push_back(tempDescBufferInfo);
+		m_DescBufferInfos.emplace_back(tempDescBufferInfo);
 
 		VkWriteDescriptorSet tempWriteDescSet = {};
 		tempWriteDescSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -89,7 +89,7 @@ void Sets::AddTexture(const Texture& texture, int bindingIndex)
 		tempDescImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		tempDescImageInfo.imageView = texture.GetImage()->GetImageView();
 		tempDescImageInfo.sampler = texture.GetSampler();
-		m_DescImageInfos.push_back(tempDescImageInfo);
+		m_DescImageInfos.emplace_back(tempDescImageInfo);
 
 		VkWriteDescriptorSet tempWriteDescSet = {};
 		tempWriteDescSet.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

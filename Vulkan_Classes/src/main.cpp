@@ -52,7 +52,8 @@ int main()
 	Image depthImage(window, { window.GetSwapChainExtent().width, window.GetSwapChainExtent().height, 1 }, Shader::StaticFindDepthFormat(window), VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT, VK_IMAGE_ASPECT_DEPTH_BIT);
 	Framebuffer framebuffer(window, shader, window.GetSwapChainImageViews(), depthImage.GetImageView());
 
-	Texture texture("res/img/andrew_manga_3_square.png", cmdPool);
+	Texture texture1("res/img/andrew_manga_3_square.png", cmdPool);
+	Texture texture2("res/img/GEAR_logo_square.png", cmdPool);
 
 	std::vector<VertexData> vertices = {
 	{ { -0.5f, -0.5f, +0.5f },{ 1.0f, 0.0f, 0.0f },{ 0.0f, 1.0f } },
@@ -84,52 +85,73 @@ int main()
 	CameraUBO CameraUBO;
 	CameraUBO.proj = glm::perspective(glm::radians(90.0f), window.GetRatio(), 0.1f, 10.0f);
 	CameraUBO.proj[1][1] *= -1; //Flips proj for Vulkan NDC;
-	CameraUBO.view = glm::lookAt(glm::vec3(1.0f, 1.0f, 1.0f), glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-	CameraUBO.modl = glm::rotate(glm::mat4(1.0f), glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
+	CameraUBO.view = glm::lookAt(glm::vec3(0.0f, 0.0f, 0.0f), glm::vec3(0.0f, 0.0f, -1.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
 	VertexBuffer VBO(window, cmdPool, sizeof(VertexData) * vertices.size(), vertices.data());
 	IndexBuffer IBO(window, cmdPool, sizeof(uint32_t) * indices.size(), indices.data());
 	UniformBuffer UBO(window, sizeof(CameraUBO));
 
 	Descriptor::Pool descPool(window, { VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER });
-	Descriptor::Sets descSets(window, descPool, shader);
-	descSets.AddUniformBuffer(UBO, 0);
-	descSets.AddTexture(texture, 1);
-	descSets.Update();
+	Descriptor::Sets descSets1(window, descPool, shader);
+	descSets1.AddUniformBuffer(UBO, 0);
+	descSets1.AddTexture(texture1, 1);
+	descSets1.Update();
 
+	Renderer renderer(window, shader, depthImage, framebuffer);
 	Cmd::Buffer cmdBuffer(cmdPool);
-	cmdBuffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
-	cmdBuffer.BeginRenderPass(shader, framebuffer);
-	cmdBuffer.BindPipeline(shader);
-	cmdBuffer.BindVertexBuffer(VBO);
-	cmdBuffer.BindIndexBuffer(IBO);
-	cmdBuffer.BindBindDescriptorSets(shader, descSets);
-	cmdBuffer.Draw(IBO);
-	cmdBuffer.EndRenderPass();
-	cmdBuffer.End();
-
-	Renderer renderer(cmdBuffer, window, shader, depthImage, framebuffer, VBO, IBO, descSets);
 
 	int MAX_FRAMES_IN_FLIGHT = 2;
 	Sync::Semaphore imageAvailable(window, MAX_FRAMES_IN_FLIGHT);
 	Sync::Semaphore renderFinished(window, MAX_FRAMES_IN_FLIGHT);
 	Sync::Fence inFlight(window, MAX_FRAMES_IN_FLIGHT);
 
+	bool INITIAL_SUBMIT = true;
+	int IMAGE_INDEX = 0;
 	int CURRENT_FRAME = 0;
 	while (!glfwWindowShouldClose(window.GetGLFWwindow()))
 	{
 		window.Update();
+
+		//Update UBO
 		static auto startTime = std::chrono::high_resolution_clock::now();
 		auto currentTime = std::chrono::high_resolution_clock::now();
 		float deltaTime = 0.5f * std::chrono::duration<float, std::chrono::seconds::period>(currentTime - startTime).count();
-
 		CameraUBO.proj = glm::perspective(glm::radians(90.0f), window.GetRatio(), 0.1f, 10.0f);
 		CameraUBO.proj[1][1] *= -1; //Flips proj for Vulkan NDC;
-		CameraUBO.modl = glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 0.0f, 1.0f));
-		UBO.UpdateUniformBuffers(&CameraUBO, CURRENT_FRAME);
-		renderer.DrawFrame(inFlight, imageAvailable, renderFinished, CURRENT_FRAME);
+		CameraUBO.modl = glm::translate(glm::mat4(1.0f), glm::vec3(1.0f, 0.0f, -2.0f)) * glm::rotate(glm::mat4(1.0f), deltaTime * glm::radians(90.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 
+		//Initial and Re- Submission of CmdBuffers
+		if (renderer.m_ResubmitCommandBuffers)
+		{
+			if (!INITIAL_SUBMIT)
+			{
+				cmdBuffer.DestroyCommandbuffer();
+				cmdBuffer.CreateCommandbuffer();
+			}
+
+			cmdBuffer.SetClearValues({ 0.5, 0.5, 0.5, 1.0 });
+			cmdBuffer.Begin(VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT);
+			cmdBuffer.BeginRenderPass(shader, framebuffer);
+			cmdBuffer.BindPipeline(shader);
+			cmdBuffer.BindVertexBuffer(VBO);
+			cmdBuffer.BindIndexBuffer(IBO);
+			cmdBuffer.BindBindDescriptorSets(shader, descSets1);
+			cmdBuffer.Draw(IBO);
+			cmdBuffer.EndRenderPass();
+			cmdBuffer.End();
+
+			renderer.Submit(&cmdBuffer);
+			INITIAL_SUBMIT = false;
+			renderer.m_ResubmitCommandBuffers = false;
+		}
+		//Renderering
+		renderer.DrawFrame(inFlight, imageAvailable, renderFinished, CURRENT_FRAME, IMAGE_INDEX);
+		UBO.UpdateUniformBuffers(&CameraUBO, IMAGE_INDEX);
+		
+		//Update Frame number
 		CURRENT_FRAME = (CURRENT_FRAME + 1) % inFlight.MaxFramesInFlight();
 	}
 	vkDeviceWaitIdle(window.GetDevice());
 }
+
+

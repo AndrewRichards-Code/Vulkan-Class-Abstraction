@@ -8,22 +8,24 @@
 
 class Renderer
 {private:
-	Cmd::Buffer& m_CmdBuffer;
+	std::vector<Cmd::Buffer*> m_CmdBuffers;
 	Window& m_Window;
 	Shader& m_Shader;
 	Image& m_Depth;
 	Framebuffer& m_Framebuffer; 
-	VertexBuffer& m_VBO; 
-	IndexBuffer& m_IBO; 
-	Descriptor::Sets& m_DescSets;
 	
 	uint32_t m_ImageIndex;
 	VkSubmitInfo m_SubmitInfo;
 	VkPresentInfoKHR m_PresentInfo;
 
 public:
-	Renderer(Cmd::Buffer& cmdbuffers, Window& window, Shader& shader, Image& depth, Framebuffer& framebuffer, VertexBuffer& VBO, IndexBuffer& IBO, Descriptor::Sets& descSets);
+	bool m_ResubmitCommandBuffers = true;
 
-	void DrawFrame(const Sync::Fence& inFlight, const Sync::Semaphore& imageAvailable, const Sync::Semaphore& renderFinished, int currentFrame);
+public:
+	Renderer(Window& window, Shader& shader, Image& depth, Framebuffer& framebuffer);
+
+	void Submit(Cmd::Buffer* cmdbuffer);
+	void DrawFrame(const Sync::Fence& inFlight, const Sync::Semaphore& imageAvailable, const Sync::Semaphore& renderFinished, int currentFrame, int imageIndex);
 	void RecreateSwapChain();
+
 };

@@ -26,7 +26,7 @@ void Window::CreateInstance()
 {
 	m_AppInfo.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 	m_AppInfo.pNext = nullptr;
-	m_AppInfo.pApplicationName = "Vulkan 1.1.86 - Test";
+	m_AppInfo.pApplicationName = "Vulkan - Test";
 	m_AppInfo.applicationVersion = VK_API_VERSION_1_1;
 	m_AppInfo.pEngineName = "Vulkan Test Engine";
 	m_AppInfo.engineVersion = VK_API_VERSION_1_1;

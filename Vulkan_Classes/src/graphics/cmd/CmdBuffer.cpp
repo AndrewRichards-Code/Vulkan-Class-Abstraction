@@ -6,6 +6,9 @@ Buffer::Buffer(const Pool& cmdPool)
 	:m_CmdPool(cmdPool)
 {
 	CreateCommandbuffer();
+
+	m_ClearColours[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
+	m_ClearColours[1].depthStencil = { 1.0f, 0 };
 }
 
 Buffer::~Buffer()
@@ -66,8 +69,7 @@ void Buffer::End()
 
 void Buffer::BeginRenderPass(const Shader& shader, const Framebuffer& framebuffer)
 {
- 	m_ClearColours[0].color = { 0.0f, 0.0f, 0.0f, 1.0f };
-	m_ClearColours[1].depthStencil = { 1.0f, 0 };
+
 	for (int i = 0; i < static_cast<int32_t>(m_CmdBuffers.size()); i++)
 	{
 		VkRenderPassBeginInfo temp = {};
