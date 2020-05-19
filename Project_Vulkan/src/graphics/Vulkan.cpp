@@ -468,7 +468,7 @@ void Vulkan::CreateRenderPass()
 	m_SubpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
 	m_SubpassDependency.srcAccessMask = 0;
 	m_SubpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-	m_SubpassDependency.dstStageMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+	m_SubpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
 	//Render
 	std::vector<VkAttachmentDescription> attachments = { m_ColourAttachmentDesc , m_DepthAttachmentDesc };
